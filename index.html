@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="th" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Valentine's Day Surprise</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&amp;family=Dancing+Script:wght@400;700&amp;display=swap" rel="stylesheet">
+
+  <style>
+    * { font-family: 'Prompt', sans-serif; }
+    .script-font { font-family: 'Dancing Script', cursive; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(5deg); }
+    }
+    @keyframes pulse-heart {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    @keyframes sparkle {
+      0%, 100% { opacity: 0; transform: scale(0); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes fall {
+      0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100%) rotate(360deg); opacity: 0; }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    @keyframes bounce-in {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes confetti {
+      0% { transform: translateY(0) rotateZ(0deg); opacity: 1; }
+      100% { transform: translateY(100%) rotateZ(720deg); opacity: 0; }
+    }
+
+    .float { animation: float 3s ease-in-out infinite; }
+    .pulse-heart { animation: pulse-heart 1s ease-in-out infinite; }
+    .sparkle { animation: sparkle 1.5s ease-in-out infinite; }
+    .shake { animation: shake 0.5s ease-in-out; }
+    .bounce-in { animation: bounce-in 0.6s ease-out forwards; }
+
+    .heart-bg {
+      background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #f48fb1 100%);
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .card-flip { perspective: 1000px; }
+    .card-inner {
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+    .card-flip.flipped .card-inner { transform: rotateY(180deg); }
+    .card-front, .card-back {
+      backface-visibility: hidden;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    .card-back { transform: rotateY(180deg); }
+
+    .falling-heart {
+      position: fixed;
+      font-size: 24px;
+      animation: fall linear forwards;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      animation: confetti 3s ease-out forwards;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    input:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.3);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(236, 72, 153, 0.4);
+    }
+    .btn-primary:active { transform: translateY(0); }
+
+    /* ✅ Typewriter cursor */
+    .tw-cursor::after{
+      content:"|";
+      margin-left:4px;
+      animation: twblink 0.8s infinite;
+      color: rgba(190, 24, 93, 0.9);
+      font-weight: 700;
+    }
+    @keyframes twblink { 0%, 50% {opacity:1;} 51%,100%{opacity:0;} }
+
+    /* ✅ Gallery */
+    .gallery-img { user-select:none; -webkit-user-drag:none; }
+  </style>
+
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+</head>
+
+<body class="h-full heart-bg overflow-auto">
+  <div id="app" class="min-h-full w-full relative">
+
+    <!-- Floating Hearts Background -->
+    <div id="floating-hearts" class="fixed inset-0 pointer-events-none overflow-hidden z-0"></div>
+
+    <!-- Lock Screen -->
+    <div id="lock-screen" class="min-h-full w-full flex items-center justify-center p-4 relative z-10">
+      <div class="glass rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+        <div class="text-6xl mb-4 pulse-heart">💝</div>
+        <h1 class="text-2xl font-bold text-pink-800 mb-2">มีข้อความลับรอคุณอยู่</h1>
+        <p class="text-pink-600 mb-6">กรุณาใส่รหัสเพื่อเปิดดู</p>
+
+        <div class="flex justify-center gap-2 mb-4" id="code-inputs">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*"
+                 class="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-pink-300 bg-white/50 text-pink-800"
+                 data-index="0" aria-label="code digit 1">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*"
+                 class="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-pink-300 bg-white/50 text-pink-800"
+                 data-index="1" aria-label="code digit 2">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*"
+                 class="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-pink-300 bg-white/50 text-pink-800"
+                 data-index="2" aria-label="code digit 3">
+          <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*"
+                 class="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-pink-300 bg-white/50 text-pink-800"
+                 data-index="3" aria-label="code digit 4">
+        </div>
+
+        <p id="error-message" class="text-red-500 text-sm mb-4 hidden">รหัสไม่ถูกต้อง ลองใหม่นะ 💔</p>
+
+        <button id="unlock-btn" class="btn-primary text-white font-semibold py-3 px-8 rounded-full w-full">
+          เปิดข้อความ 💌
+        </button>
+
+        <p class="text-pink-400 text-xs mt-4">E💕O</p>
+      </div>
+    </div>
+
+    <!-- Main Content (Hidden Initially) -->
+    <div id="main-content" class="hidden min-h-full w-full relative z-10">
+
+      <!-- Welcome Section -->
+      <section id="welcome-section" class="min-h-full w-full flex items-center justify-center p-4">
+        <div class="text-center max-w-lg">
+          <div class="text-8xl mb-6 bounce-in">💕</div>
+
+          <h1 id="greeting-name" class="script-font text-5xl md:text-6xl text-pink-800 mb-4">
+            happy valentine's day
+          </h1>
+
+          <p class="text-pink-600 text-lg">มีอะไรจะเซอร์ไพรส์โอมด้วย...</p>
+
+          <!-- ✅ Days Counter (X ปี Y เดือน Z วัน) -->
+          <div class="mt-4 mb-8">
+            <div class="inline-flex items-center gap-2 glass rounded-full px-5 py-2 shadow-lg">
+              <span class="text-pink-700">⏳</span>
+              <span id="days-counter" class="text-pink-800 font-semibold">
+                เราคบกันมาแล้ว 0 วัน
+              </span>
+            </div>
+            <div id="relationship-start-hint" class="text-xs text-pink-500 mt-2"></div>
+          </div>
+
+          <button id="start-journey-btn" class="btn-primary text-white font-semibold py-4 px-10 rounded-full text-lg">
+            ไปกันเลย ✨
+          </button>
+        </div>
+      </section>
+
+      <!-- Game Section -->
+      <section id="game-section" class="hidden min-h-full w-full flex items-center justify-center p-4">
+        <div class="glass rounded-3xl p-6 max-w-md w-full text-center shadow-2xl">
+          <h2 class="text-2xl font-bold text-pink-800 mb-2">🎮 เกมจับคู่หัวใจ</h2>
+          <p class="text-pink-600 mb-4">จับคู่ให้ครบเพื่อดูข้อความพิเศษ!</p>
+
+          <div class="flex justify-between items-center mb-4 px-2">
+            <span class="text-pink-700 font-semibold">คะแนน: <span id="score">0</span></span>
+            <span class="text-pink-700 font-semibold">เวลา: <span id="timer">60</span>s</span>
+          </div>
+
+          <div id="game-board" class="grid grid-cols-4 gap-2 mb-4"></div>
+
+          <button id="restart-game-btn" class="text-pink-600 underline text-sm">เริ่มเกมใหม่</button>
+        </div>
+      </section>
+
+      <!-- ✅ Gallery Section -->
+      <section id="gallery-section" class="hidden min-h-full w-full flex items-center justify-center p-4">
+        <div class="glass rounded-3xl p-6 max-w-lg w-full text-center shadow-2xl">
+          <h2 class="text-2xl font-bold text-pink-800 mb-2">📸 ความทรงจำของเรา</h2>
+          <p class="text-pink-600 mb-4">เลื่อนดูรูปก่อน แล้วค่อยไปอ่านข้อความนะ 💗</p>
+
+          <div class="relative rounded-2xl overflow-hidden bg-white/30">
+            <img id="gallery-main" class="w-full h-72 object-cover gallery-img" alt="memory" />
+
+            <button id="gallery-prev"
+              class="absolute left-3 top-1/2 -translate-y-1/2 glass w-10 h-10 rounded-full flex items-center justify-center text-pink-800 hover:bg-white/40 transition"
+              aria-label="previous photo">
+              ‹
+            </button>
+            <button id="gallery-next"
+              class="absolute right-3 top-1/2 -translate-y-1/2 glass w-10 h-10 rounded-full flex items-center justify-center text-pink-800 hover:bg-white/40 transition"
+              aria-label="next photo">
+              ›
+            </button>
+          </div>
+
+          <div id="gallery-dots" class="flex justify-center gap-2 mt-4"></div>
+          <div id="gallery-thumbs" class="grid grid-cols-5 gap-2 mt-4"></div>
+
+          <div class="mt-6 flex flex-col gap-3">
+            <button id="to-message-btn" class="btn-primary text-white font-semibold py-3 px-6 rounded-full">
+              ไปอ่านข้อความ 💌
+            </button>
+            <button id="gallery-skip-btn" class="text-pink-600 underline text-sm">ข้ามรูป ไปเลย</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Message Section -->
+      <section id="message-section" class="hidden min-h-full w-full flex items-center justify-center p-4">
+        <div class="glass rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl relative overflow-hidden">
+          <div class="absolute top-4 left-4 text-4xl sparkle">✨</div>
+          <div class="absolute top-4 right-4 text-4xl sparkle" style="animation-delay: 0.5s;">✨</div>
+
+          <div class="text-7xl mb-6 pulse-heart">💖</div>
+          <h2 class="script-font text-4xl text-pink-800 mb-6">Happy Valentine's Day</h2>
+
+          <!-- ✅ Typewriter จะมาเขียนที่นี่ -->
+          <p id="love-message-text" class="text-pink-700 text-lg leading-relaxed mb-8"></p>
+
+          <div class="flex justify-center gap-4">
+            <button id="surprise-btn" class="btn-primary text-white font-semibold py-3 px-6 rounded-full">
+              🎁 เซอร์ไพรส์!
+            </button>
+          </div>
+
+          <div class="absolute bottom-4 left-4 text-4xl sparkle" style="animation-delay: 0.75s;">💫</div>
+          <div class="absolute bottom-4 right-4 text-4xl sparkle" style="animation-delay: 1s;">💫</div>
+        </div>
+      </section>
+
+      <!-- Surprise Section -->
+      <section id="surprise-section" class="hidden min-h-full w-full flex items-center justify-center p-4">
+        <div class="text-center">
+          <div id="heart-explosion" class="text-9xl mb-8">💝</div>
+          <h2 class="script-font text-5xl md:text-6xl text-pink-800 mb-4">รักโอมนะ</h2>
+          <p id="final-name" class="text-2xl text-pink-600 mb-8">ขอตังค์หน่อย บช.เดิมเด้อ</p>
+
+          <button id="replay-btn" class="glass text-pink-800 font-semibold py-3 px-8 rounded-full hover:bg-white/40 transition-all">
+            🔄 ดูใหม่อีกครั้ง
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script>
+    // Default configuration
+    const defaultConfig = {
+      secret_code: '1502',
+      lover_name: 'ที่รัก',
+      love_message: 'รักนะ ขอบคุณที่อยู่ด้วยกันมาตลอด\nอยู่ตามใจเอิร์กไปนานๆน๊าาา 💕',
+      relationship_start: '2024-02-15',
+      primary_color: '#ec4899',
+      secondary_color: '#fce4ec',
+      text_color: '#831843',
+      accent_color: '#be185d',
+      surface_color: '#ffffff',
+
+      // ✅ Gallery images (แก้เป็นรูปของคุณเอง)
+      gallery_images: [
+        'img/1.jpg',
+        'img/2.jpg',
+        'img/3.jpg',
+        'img/4.jpg',
+        'img/5.jpg'
+      ]
+    };
+
+    let config = { ...defaultConfig };
+
+    // Game state
+    let gameState = {
+      cards: [],
+      flippedCards: [],
+      matchedPairs: 0,
+      score: 0,
+      timer: 60,
+      timerInterval: null,
+      isPlaying: false
+    };
+
+    const emojis = ['💖', '💕', '💗', '💓', '💝', '💘', '🌹', '🦋'];
+
+    // Initialize floating hearts
+    function createFloatingHearts() {
+      const container = document.getElementById('floating-hearts');
+      container.innerHTML = '';
+      const hearts = ['💕', '💖', '💗', '💓', '❤️', '💘'];
+
+      for (let i = 0; i < 15; i++) {
+        const heart = document.createElement('div');
+        heart.className = 'absolute text-2xl opacity-20 float';
+        heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+        heart.style.left = Math.random() * 100 + '%';
+        heart.style.top = Math.random() * 100 + '%';
+        heart.style.animationDelay = Math.random() * 3 + 's';
+        heart.style.animationDuration = (3 + Math.random() * 2) + 's';
+        container.appendChild(heart);
+      }
+    }
+
+    // Create falling hearts effect
+    function createFallingHearts() {
+      const hearts = ['💕', '💖', '💗', '❤️', '💝'];
+      for (let i = 0; i < 30; i++) {
+        setTimeout(() => {
+          const heart = document.createElement('div');
+          heart.className = 'falling-heart';
+          heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+          heart.style.left = Math.random() * 100 + '%';
+          heart.style.animationDuration = (2 + Math.random() * 2) + 's';
+          document.body.appendChild(heart);
+
+          setTimeout(() => heart.remove(), 4000);
+        }, i * 100);
+      }
+    }
+
+    // Create confetti effect
+    function createConfetti() {
+      const colors = ['#ec4899', '#f472b6', '#fce7f3', '#be185d', '#ff6b6b', '#ffd93d'];
+      for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.left = Math.random() * 100 + '%';
+          confetti.style.top = '-10px';
+          confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+          document.body.appendChild(confetti);
+
+          setTimeout(() => confetti.remove(), 3000);
+        }, i * 50);
+      }
+    }
+
+    // ✅ คำนวณความต่างแบบ X ปี Y เดือน Z วัน + รวมวันทั้งหมด
+    function diffYMD(startDateStr) {
+      if (!startDateStr) return { years: 0, months: 0, days: 0, totalDays: 0 };
+
+      const start = new Date(startDateStr + 'T12:00:00');
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
+
+      if (isNaN(start.getTime())) return { years: 0, months: 0, days: 0, totalDays: 0 };
+      if (end < start) return { years: 0, months: 0, days: 0, totalDays: 0 };
+
+      const totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+
+      let y = end.getFullYear() - start.getFullYear();
+      let m = end.getMonth() - start.getMonth();
+      let d = end.getDate() - start.getDate();
+
+      if (d < 0) {
+        const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+        d += prevMonth.getDate();
+        m -= 1;
+      }
+
+      if (m < 0) {
+        m += 12;
+        y -= 1;
+      }
+
+      return { years: Math.max(0, y), months: Math.max(0, m), days: Math.max(0, d), totalDays };
+    }
+
+    function formatYMD(th) {
+      const parts = [];
+      if (th.years) parts.push(`${th.years.toLocaleString('th-TH')} ปี`);
+      if (th.months) parts.push(`${th.months.toLocaleString('th-TH')} เดือน`);
+      parts.push(`${th.days.toLocaleString('th-TH')} วัน`);
+      return parts.join(' ');
+    }
+
+    function updateDaysCounter() {
+      const startDate = config.relationship_start || defaultConfig.relationship_start;
+      const el = document.getElementById('days-counter');
+      const hint = document.getElementById('relationship-start-hint');
+
+      if (!el) return;
+
+      if (!startDate) {
+        el.textContent = `เราคบกันมาแล้ว 0 วัน`;
+        if (hint) hint.textContent = `*ยังไม่ได้ตั้งวันเริ่มคบ (relationship_start)`;
+        return;
+      }
+
+      const diff = diffYMD(startDate);
+      const pretty = formatYMD(diff);
+
+      el.textContent = `เราคบกันมาแล้ว ${pretty}`;
+
+      if (hint) {
+        hint.textContent = `รวมทั้งหมด ${diff.totalDays.toLocaleString('th-TH')} วัน • เริ่มคบกัน: ${startDate}`;
+      }
+    }
+
+    // -------------------- ✅ Typewriter --------------------
+    function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+    async function typewriterHTML(el, text, speed = 28) {
+      if (!el) return;
+      el.classList.add('tw-cursor');
+      el.innerHTML = '';
+      const safe = (text || '').toString();
+
+      const parts = safe.split('\n');
+      for (let li = 0; li < parts.length; li++) {
+        const line = parts[li];
+        for (let i = 0; i < line.length; i++) {
+          el.innerHTML += line[i];
+          await sleep(speed);
+        }
+        if (li < parts.length - 1) el.innerHTML += '<br>';
+      }
+
+      await sleep(500);
+      el.classList.remove('tw-cursor');
+    }
+
+    function showMessageWithTypewriter() {
+      document.getElementById('gallery-section').classList.add('hidden');
+      document.getElementById('message-section').classList.remove('hidden');
+
+      const el = document.getElementById('love-message-text');
+      const msg = (config.love_message || defaultConfig.love_message || '')
+        .replace(/<br\s*\/?>/gi, '\n');
+
+      typewriterHTML(el, msg, 26);
+    }
+
+    // -------------------- ✅ Gallery --------------------
+    let galleryState = { images: [], idx: 0 };
+
+    function getGalleryImages() {
+      const imgs = config.gallery_images || defaultConfig.gallery_images || [];
+      return Array.isArray(imgs) ? imgs.filter(Boolean) : [];
+    }
+
+    function renderGallery() {
+      const main = document.getElementById('gallery-main');
+      const dots = document.getElementById('gallery-dots');
+      const thumbs = document.getElementById('gallery-thumbs');
+
+      galleryState.images = getGalleryImages();
+      if (!galleryState.images.length) {
+        galleryState.images = ['https://placehold.co/900x600/png?text=Add+your+photos'];
+      }
+      galleryState.idx = Math.max(0, Math.min(galleryState.idx, galleryState.images.length - 1));
+
+      const current = galleryState.images[galleryState.idx];
+      main.src = current;
+
+      dots.innerHTML = '';
+      galleryState.images.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.className = `w-2.5 h-2.5 rounded-full transition ${i === galleryState.idx ? 'bg-pink-700' : 'bg-pink-300/70'}`;
+        dot.addEventListener('click', () => { galleryState.idx = i; renderGallery(); });
+        dots.appendChild(dot);
+      });
+
+      thumbs.innerHTML = '';
+      galleryState.images.forEach((src, i) => {
+        const b = document.createElement('button');
+        b.className = `rounded-xl overflow-hidden border-2 transition ${i === galleryState.idx ? 'border-pink-600' : 'border-transparent'}`;
+        b.innerHTML = `<img src="${src}" class="w-full h-14 object-cover gallery-img" alt="thumb ${i+1}">`;
+        b.addEventListener('click', () => { galleryState.idx = i; renderGallery(); });
+        thumbs.appendChild(b);
+      });
+    }
+
+    function showGallerySection() {
+      document.getElementById('game-section').classList.add('hidden');
+      document.getElementById('gallery-section').classList.remove('hidden');
+      renderGallery();
+    }
+
+    function setupGalleryControls() {
+      document.getElementById('gallery-prev').addEventListener('click', () => {
+        galleryState.idx = (galleryState.idx - 1 + galleryState.images.length) % galleryState.images.length;
+        renderGallery();
+      });
+      document.getElementById('gallery-next').addEventListener('click', () => {
+        galleryState.idx = (galleryState.idx + 1) % galleryState.images.length;
+        renderGallery();
+      });
+
+      document.getElementById('to-message-btn').addEventListener('click', showMessageWithTypewriter);
+      document.getElementById('gallery-skip-btn').addEventListener('click', showMessageWithTypewriter);
+    }
+
+    // Lock screen functionality
+    function setupLockScreen() {
+      const inputs = document.querySelectorAll('#code-inputs input');
+      const unlockBtn = document.getElementById('unlock-btn');
+      const errorMsg = document.getElementById('error-message');
+
+      inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+          // ✅ รับเฉพาะตัวเลข
+          e.target.value = e.target.value.replace(/\D/g, '');
+
+          const value = e.target.value;
+          if (value && index < inputs.length - 1) {
+            inputs[index + 1].focus();
+          }
+
+          // ✅ ถ้ากรอกครบ 4 หลัก กดปลดล็อคอัตโนมัติ
+          const entered = Array.from(inputs).map(i => i.value).join('');
+          if (entered.length === 4) unlockBtn.click();
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !e.target.value && index > 0) {
+            inputs[index - 1].focus();
+          }
+          // ✅ Enter ปลดล็อค
+          if (e.key === 'Enter') unlockBtn.click();
+        });
+      });
+
+      unlockBtn.addEventListener('click', () => {
+        const enteredCode = Array.from(inputs).map(i => i.value).join('');
+        const secretCode = config.secret_code || defaultConfig.secret_code;
+
+        if (enteredCode === secretCode) {
+          document.getElementById('lock-screen').classList.add('hidden');
+          document.getElementById('main-content').classList.remove('hidden');
+          createFallingHearts();
+        } else {
+          errorMsg.classList.remove('hidden');
+          document.getElementById('code-inputs').classList.add('shake');
+          setTimeout(() => {
+            document.getElementById('code-inputs').classList.remove('shake');
+          }, 500);
+          inputs.forEach(i => i.value = '');
+          inputs[0].focus();
+        }
+      });
+    }
+
+    // Game functionality
+    function initializeGame() {
+      const board = document.getElementById('game-board');
+      const pairs = [...emojis, ...emojis];
+
+      for (let i = pairs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+      }
+
+      board.innerHTML = '';
+      gameState.cards = [];
+      gameState.flippedCards = [];
+      gameState.matchedPairs = 0;
+      gameState.score = 0;
+      gameState.timer = 60;
+      gameState.isPlaying = true;
+
+      document.getElementById('score').textContent = '0';
+      document.getElementById('timer').textContent = '60';
+
+      pairs.forEach((emoji, index) => {
+        const card = document.createElement('div');
+        card.className = 'card-flip aspect-square cursor-pointer';
+        card.dataset.index = index;
+        card.dataset.emoji = emoji;
+        card.innerHTML = `
+          <div class="card-inner w-full h-full relative">
+            <div class="card-front w-full h-full bg-gradient-to-br from-pink-400 to-pink-600 rounded-xl flex items-center justify-center text-3xl shadow-lg">
+              ?
+            </div>
+            <div class="card-back w-full h-full bg-white rounded-xl flex items-center justify-center text-3xl shadow-lg">
+              ${emoji}
+            </div>
+          </div>
+        `;
+
+        card.addEventListener('click', () => flipCard(card));
+        board.appendChild(card);
+        gameState.cards.push(card);
+      });
+
+      if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+      gameState.timerInterval = setInterval(() => {
+        if (!gameState.isPlaying) return;
+        gameState.timer--;
+        document.getElementById('timer').textContent = gameState.timer;
+
+        if (gameState.timer <= 0) {
+          gameState.isPlaying = false;
+          clearInterval(gameState.timerInterval);
+        }
+      }, 1000);
+    }
+
+    function flipCard(card) {
+      if (!gameState.isPlaying) return;
+      if (gameState.flippedCards.length >= 2) return;
+      if (card.classList.contains('flipped')) return;
+      if (card.classList.contains('matched')) return;
+
+      card.classList.add('flipped');
+      gameState.flippedCards.push(card);
+
+      if (gameState.flippedCards.length === 2) {
+        checkMatch();
+      }
+    }
+
+    function checkMatch() {
+      const [card1, card2] = gameState.flippedCards;
+      const match = card1.dataset.emoji === card2.dataset.emoji;
+
+      if (match) {
+        gameState.matchedPairs++;
+        gameState.score += 10;
+        document.getElementById('score').textContent = gameState.score;
+
+        card1.classList.add('matched');
+        card2.classList.add('matched');
+        gameState.flippedCards = [];
+
+        // ✅ Win condition: ไป Gallery ก่อน แล้วค่อยไปข้อความแบบ Typewriter
+        if (gameState.matchedPairs === 8) {
+          gameState.isPlaying = false;
+          clearInterval(gameState.timerInterval);
+          setTimeout(() => {
+            createConfetti();
+            showGallerySection();
+          }, 500);
+        }
+      } else {
+        setTimeout(() => {
+          card1.classList.remove('flipped');
+          card2.classList.remove('flipped');
+          gameState.flippedCards = [];
+        }, 800);
+      }
+    }
+
+    // Navigation
+    function setupNavigation() {
+      document.getElementById('start-journey-btn').addEventListener('click', () => {
+        document.getElementById('welcome-section').classList.add('hidden');
+        document.getElementById('game-section').classList.remove('hidden');
+        initializeGame();
+      });
+
+      document.getElementById('restart-game-btn').addEventListener('click', () => {
+        initializeGame();
+      });
+
+      document.getElementById('surprise-btn').addEventListener('click', () => {
+        document.getElementById('message-section').classList.add('hidden');
+        document.getElementById('surprise-section').classList.remove('hidden');
+        createFallingHearts();
+        createConfetti();
+
+        const heart = document.getElementById('heart-explosion');
+        heart.classList.add('pulse-heart');
+      });
+
+      document.getElementById('replay-btn').addEventListener('click', () => {
+        document.getElementById('surprise-section').classList.add('hidden');
+        document.getElementById('welcome-section').classList.remove('hidden');
+        document.getElementById('message-section').classList.add('hidden');
+        document.getElementById('gallery-section').classList.add('hidden');
+      });
+    }
+
+    // Config change handler
+    async function onConfigChange(newConfig) {
+      config = { ...defaultConfig, ...newConfig };
+
+      const loverName = config.lover_name || defaultConfig.lover_name;
+      document.getElementById('greeting-name').textContent = `สวัสดี ${loverName}`;
+      document.getElementById('final-name').textContent = `${loverName} ของฉัน`;
+
+      // ไม่ต้อง set innerHTML ตรงนี้ เพราะเราจะใช้ typewriter ตอนเข้าหน้า message
+      // แต่ใส่ค่า default เผื่อจะเปิดหน้าข้อความตรงๆ
+      const el = document.getElementById('love-message-text');
+      if (el && document.getElementById('message-section') && !document.getElementById('message-section').classList.contains('hidden')) {
+        showMessageWithTypewriter();
+      } else if (el) {
+        el.innerHTML = '';
+      }
+
+      const primaryColor = config.primary_color || defaultConfig.primary_color;
+      const buttons = document.querySelectorAll('.btn-primary');
+      buttons.forEach(btn => {
+        btn.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${config.accent_color || defaultConfig.accent_color} 100%)`;
+      });
+
+      updateDaysCounter();
+      renderGallery();
+    }
+
+    // Map to capabilities
+    function mapToCapabilities(config) {
+      return {
+        recolorables: [
+          {
+            get: () => config.secondary_color || defaultConfig.secondary_color,
+            set: (value) => { config.secondary_color = value; window.elementSdk.setConfig({ secondary_color: value }); }
+          },
+          {
+            get: () => config.surface_color || defaultConfig.surface_color,
+            set: (value) => { config.surface_color = value; window.elementSdk.setConfig({ surface_color: value }); }
+          },
+          {
+            get: () => config.text_color || defaultConfig.text_color,
+            set: (value) => { config.text_color = value; window.elementSdk.setConfig({ text_color: value }); }
+          },
+          {
+            get: () => config.primary_color || defaultConfig.primary_color,
+            set: (value) => { config.primary_color = value; window.elementSdk.setConfig({ primary_color: value }); }
+          },
+          {
+            get: () => config.accent_color || defaultConfig.accent_color,
+            set: (value) => { config.accent_color = value; window.elementSdk.setConfig({ accent_color: value }); }
+          }
+        ],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      };
+    }
+
+    // Map to edit panel values
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ['secret_code', config.secret_code || defaultConfig.secret_code],
+        ['lover_name', config.lover_name || defaultConfig.lover_name],
+        ['love_message', config.love_message || defaultConfig.love_message],
+        ['relationship_start', config.relationship_start || defaultConfig.relationship_start]
+      ]);
+    }
+
+    // Initialize app
+    function init() {
+      createFloatingHearts();
+      setupLockScreen();
+      setupNavigation();
+      setupGalleryControls();
+
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange,
+          mapToCapabilities,
+          mapToEditPanelValues
+        });
+      }
+
+      updateDaysCounter();
+      renderGallery();
+    }
+
+    init();
+  </script>
+
+  <script>
+    (function () {
+      function c() {
+        var b = a.contentDocument || a.contentWindow.document;
+        if (b) {
+          var d = b.createElement('script');
+          d.innerHTML =
+            "window.__CF$cv$params={r:'9cd1725937827b56',t:'MTc3MDk1NTUxOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+          b.getElementsByTagName('head')[0].appendChild(d);
+        }
+      }
+      if (document.body) {
+        var a = document.createElement('iframe');
+        a.height = 1;
+        a.width = 1;
+        a.style.position = 'absolute';
+        a.style.top = 0;
+        a.style.left = 0;
+        a.style.border = 'none';
+        a.style.visibility = 'hidden';
+        document.body.appendChild(a);
+        if ('loading' !== document.readyState) c();
+        else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c);
+        else {
+          var e = document.onreadystatechange || function () {};
+          document.onreadystatechange = function (b) {
+            e(b);
+            'loading' !== document.readyState && (document.onreadystatechange = e, c());
+          };
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
